@@ -21,7 +21,22 @@
 
 #include "esp_err.h"
 
-#if HARDWARE_VER == WICAN_PRO
+#if HARDWARE_VER == WICAN_PRV_LINK
+/* PRV-LINK: ESP32-C3 TWAI direct, BLE OBD2 dongle
+ * Based on V300 pin mapping (proven on ESP32-C3)
+ * Single status LED instead of 3 separate LEDs
+ * ESP32-C3 has GPIO 0-21 only
+ */
+#define FS_MOUNT_POINT              "/spiffs"
+#define TX_GPIO_NUM             	0       // TWAI TX (same as V300)
+#define RX_GPIO_NUM             	3       // TWAI RX (same as V300)
+#define CAN_STDBY_GPIO_NUM			6       // CAN transceiver standby (same as V300)
+#define CONNECTED_LED_GPIO_NUM		7       // Single status LED (all LED pins = GPIO7)
+#define ACTIVE_LED_GPIO_NUM			7
+#define BLE_EN_PIN_NUM				5       // BLE enable detection
+#define PWR_LED_GPIO_NUM			7
+
+#elif HARDWARE_VER == WICAN_PRO
 #define FS_MOUNT_POINT              "/fatfs"
 #define TX_GPIO_NUM             	2
 #define RX_GPIO_NUM             	1

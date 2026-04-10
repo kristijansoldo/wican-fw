@@ -1,0 +1,579 @@
+(kicad_sch
+  (version 20231120)
+  (generator "eeschema")
+  (generator_version "7.0")
+  (uuid "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+  (paper "A3")
+  (title_block
+    (title "PRV-LINK OBD2 BLE Adapter")
+    (date "2026-04-09")
+    (rev "2.0")
+    (company "Provirium")
+    (comment 1 "ESP32-S3 TWAI direct - no STN1110")
+    (comment 2 "BLE-only OBD2 dongle, software ELM327 emulation")
+    (comment 3 "Based on WiCAN OBD Pro v1.51 by MeatPi Electronics")
+    (comment 4 "Target: 60x40x20mm OBD2 dongle enclosure")
+  )
+
+  ;; ============================================================
+  ;; POWER SYMBOLS
+  ;; ============================================================
+
+  (symbol
+    (lib_id "power:+3V3")
+    (at 76.2 25.4 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom no)
+    (on_board yes)
+    (uuid "pwr-3v3-1")
+    (property "Reference" "#PWR01" (at 76.2 29.21 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Value" "+3V3" (at 76.2 21.59 0) (effects (font (size 1.27 1.27))))
+  )
+
+  (symbol
+    (lib_id "power:+5V")
+    (at 50.8 25.4 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom no)
+    (on_board yes)
+    (uuid "pwr-5v-1")
+    (property "Reference" "#PWR02" (at 50.8 29.21 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Value" "+5V" (at 50.8 21.59 0) (effects (font (size 1.27 1.27))))
+  )
+
+  (symbol
+    (lib_id "power:+12V")
+    (at 25.4 25.4 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom no)
+    (on_board yes)
+    (uuid "pwr-12v-1")
+    (property "Reference" "#PWR03" (at 25.4 29.21 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Value" "+12V" (at 25.4 21.59 0) (effects (font (size 1.27 1.27))))
+  )
+
+  (symbol
+    (lib_id "power:GND")
+    (at 50.8 177.8 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom no)
+    (on_board yes)
+    (uuid "pwr-gnd-1")
+    (property "Reference" "#PWR04" (at 50.8 184.15 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Value" "GND" (at 50.8 182.88 0) (effects (font (size 1.27 1.27))))
+  )
+
+  ;; ============================================================
+  ;; SECTION 1: OBD2 CONNECTOR (J1)
+  ;; ============================================================
+  ;; Standard SAE J1962 OBD-II 16-pin male connector (through-hole, PCB mount)
+  ;; Pin 4:  Chassis Ground
+  ;; Pin 5:  Signal Ground
+  ;; Pin 6:  CAN High (HS-CAN)
+  ;; Pin 14: CAN Low (HS-CAN)
+  ;; Pin 16: Battery Power (+12V)
+
+  (symbol
+    (lib_id "Connector:Conn_OBD2_Male_16Pin")
+    (at 355.6 76.2 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "j1-obd2")
+    (property "Reference" "J1" (at 355.6 53.34 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "OBD-II-16P-Male" (at 355.6 55.88 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Connector_Automotive:OBD2_Male_16Pin_THT" (at 355.6 76.2 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Datasheet" "" (at 355.6 76.2 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C9900123312" (at 355.6 76.2 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "OBD-II J1962 16-pin male connector, THT, JLCPCB C9900123312" (at 355.6 76.2 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; ============================================================
+  ;; SECTION 2: POWER SUPPLY - 12V to 5V (U1 - MP2359DJ)
+  ;; ============================================================
+  ;; Automotive 12V input (8-16V range) -> 5V regulated output
+  ;; Buck converter for efficiency in small enclosure
+  ;; Input protection: TVS diode + reverse polarity Schottky
+
+  ;; D1 - TVS Diode (Input Protection)
+  (symbol
+    (lib_id "Device:D_TVS")
+    (at 38.1 50.8 90)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "d1-tvs")
+    (property "Reference" "D1" (at 33.02 50.8 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "SMBJ16A" (at 43.18 50.8 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Diode_SMD:D_SMB" (at 38.1 50.8 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C113632" (at 38.1 50.8 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "TVS diode, 16V standoff, automotive transient protection" (at 38.1 50.8 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; D2 - Schottky Diode (Reverse Polarity Protection)
+  (symbol
+    (lib_id "Device:D_Schottky")
+    (at 25.4 38.1 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "d2-schottky")
+    (property "Reference" "D2" (at 25.4 34.29 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "SS34" (at 25.4 41.91 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Diode_SMD:D_SMA" (at 25.4 38.1 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C8678" (at 25.4 38.1 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Schottky diode, reverse polarity protection, 3A 40V" (at 25.4 38.1 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; U1 - Buck Converter 12V -> 5V
+  (symbol
+    (lib_id "Regulator_Switching:MP2359")
+    (at 63.5 44.45 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "u1-buck-5v")
+    (property "Reference" "U1" (at 63.5 34.29 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "MP2359DJ-LF-Z" (at 63.5 36.83 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Package_TO_SOT_SMD:SOT-23-6" (at 63.5 44.45 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Datasheet" "https://www.monolithicpower.com/en/mp2359.html" (at 63.5 44.45 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C14259" (at 63.5 44.45 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Step-down converter, 1.2A, 4.5-24V input, SOT-23-6" (at 63.5 44.45 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; C1 - Input capacitor for buck converter
+  (symbol
+    (lib_id "Device:C")
+    (at 44.45 50.8 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "c1-input")
+    (property "Reference" "C1" (at 47.625 49.53 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "22uF/25V" (at 47.625 52.07 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Capacitor_SMD:C_0805_2012Metric" (at 44.45 50.8 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C45783" (at 44.45 50.8 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Input filter capacitor, 22uF 25V X5R ceramic" (at 44.45 50.8 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; C2 - Output capacitor for buck converter
+  (symbol
+    (lib_id "Device:C")
+    (at 82.55 50.8 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "c2-output-5v")
+    (property "Reference" "C2" (at 85.725 49.53 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "22uF/10V" (at 85.725 52.07 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Capacitor_SMD:C_0805_2012Metric" (at 82.55 50.8 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C45783" (at 82.55 50.8 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Output filter capacitor, 22uF 10V X5R ceramic" (at 82.55 50.8 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; L1 - Buck converter inductor
+  (symbol
+    (lib_id "Device:L")
+    (at 73.66 38.1 90)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "l1-inductor")
+    (property "Reference" "L1" (at 73.66 35.56 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "10uH/1.5A" (at 73.66 40.64 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Inductor_SMD:L_Taiyo-Yuden_NR-30xx" (at 73.66 38.1 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C339747" (at 73.66 38.1 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Power inductor, 10uH, 1.5A saturation, shielded, 3x3mm" (at 73.66 38.1 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; D3 - Buck converter freewheeling diode
+  (symbol
+    (lib_id "Device:D_Schottky")
+    (at 63.5 57.15 90)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "d3-freewheeling")
+    (property "Reference" "D3" (at 58.42 57.15 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "SS14" (at 68.58 57.15 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Diode_SMD:D_SMA" (at 63.5 57.15 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C2480" (at 63.5 57.15 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Schottky diode for buck converter, 1A 40V" (at 63.5 57.15 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; R1, R2 - Feedback voltage divider for 5V output
+  (symbol
+    (lib_id "Device:R")
+    (at 88.9 44.45 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "r1-fb-top")
+    (property "Reference" "R1" (at 92.075 44.45 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "49.9K" (at 95.25 44.45 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric" (at 88.9 44.45 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C25129" (at 88.9 44.45 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Feedback resistor top, 1% tolerance" (at 88.9 44.45 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  (symbol
+    (lib_id "Device:R")
+    (at 88.9 55.88 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "r2-fb-bottom")
+    (property "Reference" "R2" (at 92.075 55.88 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "15K" (at 95.25 55.88 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric" (at 88.9 55.88 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C25808" (at 88.9 55.88 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Feedback resistor bottom, 1% tolerance" (at 88.9 55.88 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; ============================================================
+  ;; SECTION 3: POWER SUPPLY - 5V to 3.3V (U2 - AMS1117-3.3)
+  ;; ============================================================
+
+  (symbol
+    (lib_id "Regulator_Linear:AMS1117-3.3")
+    (at 120.65 38.1 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "u2-ldo-3v3")
+    (property "Reference" "U2" (at 120.65 30.48 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "AMS1117-3.3" (at 120.65 33.02 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Package_TO_SOT_SMD:SOT-223-3_TabPin2" (at 120.65 38.1 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C6186" (at 120.65 38.1 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "LDO regulator, 3.3V 1A output, SOT-223" (at 120.65 38.1 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; C3 - LDO input capacitor
+  (symbol
+    (lib_id "Device:C")
+    (at 107.95 46.99 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "c3-ldo-in")
+    (property "Reference" "C3" (at 111.125 45.72 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "10uF" (at 111.125 48.26 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Capacitor_SMD:C_0805_2012Metric" (at 107.95 46.99 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C15850" (at 107.95 46.99 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "LDO input capacitor, 10uF 10V X5R" (at 107.95 46.99 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; C4 - LDO output capacitor
+  (symbol
+    (lib_id "Device:C")
+    (at 133.35 46.99 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "c4-ldo-out")
+    (property "Reference" "C4" (at 136.525 45.72 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "22uF" (at 136.525 48.26 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Capacitor_SMD:C_0805_2012Metric" (at 133.35 46.99 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C45783" (at 133.35 46.99 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "LDO output capacitor, 22uF 10V X5R" (at 133.35 46.99 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; ============================================================
+  ;; SECTION 4: ESP32-S3-MINI-1 MODULE (U3)
+  ;; ============================================================
+  ;; ESP32-S3-MINI-1 with integrated PCB antenna
+  ;; BLE 5.0 + WiFi 802.11 b/g/n
+  ;; TWAI (CAN 2.0) controller built-in - DIRECT CAN connection
+  ;; Software ELM327 emulation (no external OBD interpreter chip)
+
+  (symbol
+    (lib_id "RF_Module:ESP32-S3-MINI-1")
+    (at 195.58 114.3 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "u3-esp32s3")
+    (property "Reference" "U3" (at 195.58 73.66 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "ESP32-S3-MINI-1-N8" (at 195.58 76.2 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "RF_Module:ESP32-S3-MINI-1" (at 195.58 114.3 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Datasheet" "https://www.espressif.com/sites/default/files/documentation/esp32-s3-mini-1_mini-1u_datasheet_en.pdf" (at 195.58 114.3 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C2913204" (at 195.58 114.3 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "ESP32-S3-MINI-1-N8, 8MB Flash, PCB antenna, WiFi+BLE5, TWAI CAN" (at 195.58 114.3 0) (effects (font (size 1.27 1.27)) hide))
+    ;; PRV-LINK v2.0 Pin Assignments (TWAI direct, no STN1110):
+    ;; GPIO4  = TWAI_TX (to CAN transceiver TXD)
+    ;; GPIO5  = TWAI_RX (from CAN transceiver RXD)
+    ;; GPIO38 = CAN_STDBY (CAN transceiver standby control)
+    ;; GPIO42 = LED_EN (status LED)
+    ;; GPIO0  = BOOT (active low, optional button for firmware flash)
+    ;; EN     = Enable (with RC reset circuit)
+    ;;
+    ;; Free GPIOs: 1,2,3,6,7,8,9,10,11,12,13,14,21,39,40,41,47,48
+    ;; (Available for future expansion: UART debug, I2C sensors, etc.)
+  )
+
+  ;; C5, C6 - ESP32-S3 decoupling capacitors
+  (symbol
+    (lib_id "Device:C")
+    (at 170.18 80.01 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "c5-esp-decouple1")
+    (property "Reference" "C5" (at 173.355 78.74 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "100nF" (at 173.355 81.28 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Capacitor_SMD:C_0402_1005Metric" (at 170.18 80.01 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C1525" (at 170.18 80.01 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "ESP32-S3 VDD decoupling, 100nF" (at 170.18 80.01 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  (symbol
+    (lib_id "Device:C")
+    (at 160.02 80.01 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "c6-esp-decouple2")
+    (property "Reference" "C6" (at 163.195 78.74 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "10uF" (at 163.195 81.28 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Capacitor_SMD:C_0805_2012Metric" (at 160.02 80.01 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C15850" (at 160.02 80.01 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "ESP32-S3 VDD bulk decoupling, 10uF" (at 160.02 80.01 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; R3, C7 - EN pin RC reset circuit
+  (symbol
+    (lib_id "Device:R")
+    (at 167.64 88.9 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "r3-en-pullup")
+    (property "Reference" "R3" (at 170.815 88.9 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "10K" (at 173.99 88.9 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric" (at 167.64 88.9 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C25744" (at 167.64 88.9 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "EN pin pull-up resistor" (at 167.64 88.9 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  (symbol
+    (lib_id "Device:C")
+    (at 167.64 99.06 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "c7-en-filter")
+    (property "Reference" "C7" (at 170.815 97.79 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "100nF" (at 170.815 100.33 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Capacitor_SMD:C_0402_1005Metric" (at 167.64 99.06 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C1525" (at 167.64 99.06 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "EN pin filter capacitor for power-on reset" (at 167.64 99.06 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; ============================================================
+  ;; SECTION 5: CAN TRANSCEIVER (U4 - TJA1043T)
+  ;; ============================================================
+  ;; TJA1043T - Automotive CAN transceiver with standby mode
+  ;; Connected DIRECTLY to ESP32-S3 TWAI controller
+  ;; TXD <- ESP32 GPIO4 (TWAI_TX)
+  ;; RXD -> ESP32 GPIO5 (TWAI_RX)
+  ;; STB <- ESP32 GPIO38 (standby control)
+  ;; CANH/CANL -> OBD2 connector pins 6/14
+
+  (symbol
+    (lib_id "Interface_CAN_LIN:TJA1043")
+    (at 290.83 114.3 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "u4-can-xcvr")
+    (property "Reference" "U4" (at 290.83 101.6 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "TJA1043T,118" (at 290.83 104.14 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm" (at 290.83 114.3 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Datasheet" "https://www.nxp.com/docs/en/data-sheet/TJA1043.pdf" (at 290.83 114.3 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C95335" (at 290.83 114.3 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "High-speed CAN transceiver, standby mode, automotive, SOIC-8" (at 290.83 114.3 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; C8 - CAN transceiver VCC decoupling
+  (symbol
+    (lib_id "Device:C")
+    (at 278.13 107.95 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "c8-can-decouple")
+    (property "Reference" "C8" (at 281.305 106.68 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "100nF" (at 281.305 109.22 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Capacitor_SMD:C_0402_1005Metric" (at 278.13 107.95 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C1525" (at 278.13 107.95 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "CAN transceiver VCC decoupling" (at 278.13 107.95 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; R4, R5 - CAN bus series resistors (optional EMI filtering)
+  (symbol
+    (lib_id "Device:R")
+    (at 316.23 109.22 90)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "r4-canh-series")
+    (property "Reference" "R4" (at 316.23 106.68 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "0R" (at 316.23 111.76 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric" (at 316.23 109.22 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C17168" (at 316.23 109.22 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "CAN_H series resistor (0R default)" (at 316.23 109.22 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  (symbol
+    (lib_id "Device:R")
+    (at 316.23 119.38 90)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "r5-canl-series")
+    (property "Reference" "R5" (at 316.23 116.84 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "0R" (at 316.23 121.92 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric" (at 316.23 119.38 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C17168" (at 316.23 119.38 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "CAN_L series resistor (0R default)" (at 316.23 119.38 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; D4 - CAN bus ESD protection
+  (symbol
+    (lib_id "Device:D_TVS_x2_AAC")
+    (at 330.2 130.81 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "d4-can-esd")
+    (property "Reference" "D4" (at 330.2 124.46 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "PESD2CAN" (at 330.2 127 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Package_TO_SOT_SMD:SOT-23" (at 330.2 130.81 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C101402" (at 330.2 130.81 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Dual TVS for CAN bus ESD protection, SOT-23" (at 330.2 130.81 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; ============================================================
+  ;; SECTION 6: STATUS LED (D5)
+  ;; ============================================================
+  ;; Simple green LED driven by ESP32-S3 GPIO42
+
+  (symbol
+    (lib_id "Device:LED")
+    (at 226.06 152.4 90)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "d5-status-led")
+    (property "Reference" "D5" (at 222.25 152.4 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "Green LED" (at 233.68 152.4 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "LED_SMD:LED_0603_1608Metric" (at 226.06 152.4 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C72043" (at 226.06 152.4 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "Status LED, green, 0603" (at 226.06 152.4 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; R6 - LED current limiting resistor
+  (symbol
+    (lib_id "Device:R")
+    (at 226.06 139.7 0)
+    (unit 1)
+    (exclude_from_sim no)
+    (in_bom yes)
+    (on_board yes)
+    (uuid "r6-led-resistor")
+    (property "Reference" "R6" (at 229.235 139.7 0) (effects (font (size 1.27 1.27))))
+    (property "Value" "1K" (at 232.41 139.7 0) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "Resistor_SMD:R_0402_1005Metric" (at 226.06 139.7 0) (effects (font (size 1.27 1.27)) hide))
+    (property "LCSC" "C11702" (at 226.06 139.7 0) (effects (font (size 1.27 1.27)) hide))
+    (property "Description" "LED current limiting, ~1.2mA at 3.3V" (at 226.06 139.7 0) (effects (font (size 1.27 1.27)) hide))
+  )
+
+  ;; ============================================================
+  ;; NET CONNECTIONS (Signal flow description)
+  ;; ============================================================
+  ;;
+  ;; POWER:
+  ;; OBD2 Pin16 (+12V) -> D2 -> D1 -> C1 -> U1(IN)
+  ;; U1(OUT/5V) -> C2 -> U2(IN) -> U4(VCC)
+  ;; U2(OUT/3.3V) -> C4 -> U3(VDD)
+  ;;
+  ;; CAN BUS (ESP32 TWAI direct):
+  ;; U3.GPIO4 (TWAI_TX) -> U4.TXD
+  ;; U3.GPIO5 (TWAI_RX) <- U4.RXD
+  ;; U3.GPIO38 -> U4.STB (standby control)
+  ;; U4.CANH -> R4 -> D4 -> OBD2 Pin6
+  ;; U4.CANL -> R5 -> D4 -> OBD2 Pin14
+  ;;
+  ;; STATUS LED:
+  ;; U3.GPIO42 -> R6(1K) -> D5(Green) -> GND
+  ;;
+  ;; RESET:
+  ;; 3V3 -> R3(10K) -> EN -> C7(100nF) -> GND
+  ;;
+  ;; GROUND:
+  ;; OBD2 Pin4/Pin5 -> GND plane
+  ;;
+
+  ;; ============================================================
+  ;; TEXT ANNOTATIONS
+  ;; ============================================================
+
+  (text "PRV-LINK v2.0 - OBD2 BLE Adapter\nProvirium Platform\n\nESP32-S3 TWAI Direct (no STN1110)\nSoftware ELM327 emulation\nBLE 5.0, ISO 15765-4 CAN\nTarget: 60x40x20mm OBD2 dongle"
+    (at 25.4 175.26 0)
+    (effects (font (size 2.54 2.54)))
+  )
+
+  (text "POWER: 12V OBD -> 5V Buck -> 3.3V LDO"
+    (at 25.4 30.48 0)
+    (effects (font (size 1.524 1.524)))
+  )
+
+  (text "ESP32-S3-MINI-1\nPCB Antenna (BLE+WiFi)\nTWAI CAN Controller\nSoftware ELM327"
+    (at 195.58 68.58 0)
+    (effects (font (size 1.524 1.524)) (justify center))
+  )
+
+  (text "CAN Transceiver\nHS-CAN 500kbps\nDirect TWAI connection"
+    (at 290.83 97.79 0)
+    (effects (font (size 1.524 1.524)) (justify center))
+  )
+
+  (text "OBD2 16-Pin Male\nJ1962 THT\nJLCPCB C9900123312"
+    (at 355.6 49.53 0)
+    (effects (font (size 1.524 1.524)) (justify center))
+  )
+
+  (text "BLOCK DIAGRAM:\n\n[OBD2 Port] --12V--> [Buck 5V] --> [LDO 3.3V] --> [ESP32-S3]\n[OBD2 Port] --CAN_H/L--> [TJA1043T] --TXD/RXD--> [ESP32 TWAI]\n[ESP32-S3] --BLE--> [Phone App]\n[ESP32-S3] --GPIO42--> [Status LED]"
+    (at 25.4 195.58 0)
+    (effects (font (size 1.524 1.524)))
+  )
+
+)
