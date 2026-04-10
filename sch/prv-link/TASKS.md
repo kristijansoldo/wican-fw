@@ -5,8 +5,8 @@
 - [x] Naruciti SN65HVD230 CAN transceiver modul
 - [x] Naruciti OBD2 16pin male open end kabel
 - [x] Naruciti Dupont jumper wire kit (M-M, M-F, F-F)
-- [ ] Nabaviti breadboard (ako nemas)
-- [ ] Nabaviti USB-C kabel (ako nemas)
+- [x] Nabaviti breadboard
+- [x] Nabaviti USB-C kabel
 
 ## Faza 2: Priprema dok cekamo dostavu
 - [ ] Instalirati esptool (`pip install esptool`)
@@ -45,10 +45,16 @@
 - [ ] Testirati prototip na vozilu
 - [ ] Testirati fit u OBD2 kuciste
 
-## Faza 8: Provirium integracija
+## Faza 8: Provirium app integracija
 - [ ] BLE streaming podataka -> mobilna app
-- [ ] Cloud AI inference pipeline
-- [ ] Vehicle profili za razlicite aute
+- [ ] Standardni OBD-II PID citanje (RPM, temp, fuel trim, DTC)
+- [ ] UDS Service $22 podrska (manufacturer-specific DID-ovi)
+- [ ] Vehicle profil sistem (JSON format, kao WiCAN)
+- [ ] Auto-discovery: skeniranje DID-ova (22 0000-FFFF)
+- [ ] AI klasifikacija nepoznatih DID odgovora
+- [ ] Cloud sync profila izmedju korisnika
+- [ ] Importirati postojecih 72 WiCAN profila
+- [ ] OpenDBC DBC-to-JSON converter pipeline
 
 ## Faza 9: Serijska proizvodnja (200 komada)
 - [ ] Finalizirati BOM i PCB dizajn
