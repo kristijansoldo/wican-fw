@@ -27,7 +27,11 @@
 #define OBD_FW_VER_V18      "V2.3.18"
 #define OBD_FW_VER_V22		"V2.3.22"
 
+#if HARDWARE_VER == WICAN_PRO
 typedef void (*response_callback_t)(char*, uint32_t, QueueHandle_t *q, char* cmd_str);
+#else
+typedef void (*response_callback_t)(char*, uint32_t, QueueHandle_t *q);
+#endif
 
 #define ELM327_CAN_RX   0x01
 #define ELM327_CAN_TX   0x02

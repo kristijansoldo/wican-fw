@@ -211,7 +211,11 @@ typedef struct
     SemaphoreHandle_t mutex; // Mutex to protect access to the data
 } autopid_data_t;
 
+#if HARDWARE_VER == WICAN_PRO
 void autopid_parser(char *str, uint32_t len, QueueHandle_t *q, char* cmd_str);
+#else
+void autopid_parser(char *str, uint32_t len, QueueHandle_t *q);
+#endif
 void autopid_init(char* id, bool enable_logging, uint32_t logging_period);
 char *autopid_data_read(void);
 bool autopid_get_ecu_status(void);

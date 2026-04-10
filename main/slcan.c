@@ -54,7 +54,13 @@ static uint8_t timestamp_flag = 0;
 static uint8_t sl_bitrate[] = {CAN_10K, CAN_20K, CAN_50K, CAN_100K,
 								CAN_125K, CAN_250K, CAN_500K,
 								CAN_800K, CAN_1000K};
+#if HARDWARE_VER == WICAN_PRO
 void (*slcan_response)(char*, uint32_t, QueueHandle_t *q, char* cmd_str);
+#define SLCAN_RESPONSE(str, len, q) slcan_response((str), (len), (q), NULL)
+#else
+void (*slcan_response)(char*, uint32_t, QueueHandle_t *q);
+#define SLCAN_RESPONSE(str, len, q) slcan_response((str), (len), (q))
+#endif
 
 static uint16_t slcan_get_time(void)
 {
@@ -592,25 +598,25 @@ char* slcan_parse_str(uint8_t *buf, uint8_t len, twai_message_t *frame, QueueHan
 					{
 						case SL_SERIAL:
 						{
-							slcan_response((char*)serial, 0, q, NULL);
+							SLCAN_RESPONSE((char*)serial, 0, q);
 							break;
 //							return (char*)serial;
 						}
 						case SL_VER:
 						{
-							slcan_response((char*)version, 0, q, NULL);
+							SLCAN_RESPONSE((char*)version, 0, q);
 							break;
 //							return (char*)version;
 						}
 						case SL_STATUS:
 						{
-							slcan_response((char*)status, 0, q, NULL);
+							SLCAN_RESPONSE((char*)status, 0, q);
 							break;
 //							return (char*)status;
 						}
 						default:
 						{
-							slcan_response((char*)ack, 0, q, NULL);
+							SLCAN_RESPONSE((char*)ack, 0, q);
 							break;
 //							return (char*)ack;
 						}

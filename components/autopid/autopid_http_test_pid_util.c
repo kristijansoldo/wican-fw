@@ -87,10 +87,18 @@ static void test_pid_capture_cb(char *str, uint32_t len, QueueHandle_t *q, char 
     test_pid_raw_buf[test_pid_raw_len] = '\0';
 }
 
+#if HARDWARE_VER == WICAN_PRO
 static void test_pid_elm_cb(char *str, uint32_t len, QueueHandle_t *q, char *cmd_str)
+#else
+static void test_pid_elm_cb(char *str, uint32_t len, QueueHandle_t *q)
+#endif
 {
     // Capture raw bytes for the command (optional)
+#if HARDWARE_VER == WICAN_PRO
     test_pid_capture_cb(str, len, q, cmd_str);
+#else
+    test_pid_capture_cb(str, len, q, NULL);
+#endif
 
     // Signal that the command has completed (uart1_event_task only calls the
     // response callback after it sees the terminator/prompt).
@@ -197,6 +205,7 @@ bool autopid_test_pid_send_cmd_sync(const char *cmd, uint32_t timeout_ms, bool c
     memset(test_pid_cmd_buffer, 0, test_pid_cmd_buffer_cap);
     test_pid_cmd_buffer_len = 0;
 
+#if HARDWARE_VER == WICAN_PRO
     if (elm327_process_cmd((uint8_t *)send,
                            (uint32_t)cmd_len,
                            NULL,
@@ -204,6 +213,12 @@ bool autopid_test_pid_send_cmd_sync(const char *cmd, uint32_t timeout_ms, bool c
                            &test_pid_cmd_buffer_len,
                            &test_pid_last_cmd_time,
                            test_pid_elm_cb) != 0)
+#else
+    if (elm327_process_cmd((uint8_t *)send,
+                           (uint8_t)cmd_len,
+                           NULL,
+                           NULL) != 0)
+#endif
     {
         test_pid_capture_active = false;
         return false;

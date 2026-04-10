@@ -1,0 +1,26 @@
+Reference,Value,Description,Package,LCSC/JLCPCB#,Qty,Category,Sourcing,Notes
+U1,MP2359DJ-LF-Z,Step-down converter 4.5-24V to 5V 1.2A,SOT-23-6,C14259,1,Power,LCSC Basic,12V OBD input to 5V rail
+U2,AMS1117-3.3,LDO regulator 3.3V 1A,SOT-223,C6186,1,Power,LCSC Basic,5V to 3.3V for ESP32
+U3,ESP32-S3-MINI-1-N8,WiFi+BLE5 MCU 8MB Flash PCB antenna TWAI CAN,ESP32-S3-MINI-1,C2913204,1,MCU,LCSC Extended,Main controller - BLE+WiFi+TWAI CAN + software ELM327
+U4,TJA1043T/118,High-speed CAN transceiver with standby mode,SOIC-8,C95335,1,CAN,LCSC Basic,Direct TWAI connection. Alt: SN65HVD230 (C58955)
+J1,OBD-II-16P-Male,OBD-II J1962 male connector 16-pin THT PCB mount,TH-16P,C9900123312,1,Connector,JLCPCB Assembly,Wave Soldering. Alt: C9900166046 (90-deg)
+D1,SMBJ16A,TVS diode 16V standoff automotive,SMB,C113632,1,Protection,LCSC Basic,Input overvoltage protection
+D2,SS34,Schottky diode 3A 40V,SMA,C8678,1,Protection,LCSC Basic,Reverse polarity protection
+D3,SS14,Schottky diode 1A 40V,SMA,C2480,1,Power,LCSC Basic,Buck converter freewheeling diode
+D4,PESD2CAN,Dual bidirectional TVS CAN ESD,SOT-23,C101402,1,Protection,LCSC Basic,CAN bus ESD protection
+D5,Green LED,Status LED green 20mA,0603,C72043,1,Indicator,LCSC Basic,Status via GPIO42
+L1,10uH/1.5A,Shielded power inductor 3x3mm,3030,C339747,1,Power,LCSC Basic,Buck converter inductor
+C1,22uF/25V,Ceramic X5R,0805,C45783,1,Power,LCSC Basic,Buck input filter
+C2,22uF/10V,Ceramic X5R,0805,C45783,1,Power,LCSC Basic,Buck output filter
+C3,10uF/10V,Ceramic X5R,0805,C15850,1,Power,LCSC Basic,LDO input
+C4,22uF/10V,Ceramic X5R,0805,C45783,1,Power,LCSC Basic,LDO output
+C5,100nF,Ceramic MLCC,0402,C1525,1,Decoupling,LCSC Basic,ESP32 VDD decoupling
+C6,10uF/10V,Ceramic X5R,0805,C15850,1,Decoupling,LCSC Basic,ESP32 VDD bulk
+C7,100nF,Ceramic MLCC,0402,C1525,1,Reset,LCSC Basic,EN pin RC filter
+C8,100nF,Ceramic MLCC,0402,C1525,1,Decoupling,LCSC Basic,CAN transceiver VCC decoupling
+R1,49.9K 1%,Feedback top,0402,C25129,1,Power,LCSC Basic,Buck FB divider (Vout=5V)
+R2,15K 1%,Feedback bottom,0402,C25808,1,Power,LCSC Basic,Buck FB divider (Vout=5V)
+R3,10K,Pull-up,0402,C25744,1,Reset,LCSC Basic,ESP32 EN pull-up
+R4,0R,Series CAN_H,0402,C17168,1,CAN,LCSC Basic,Optional EMI filter
+R5,0R,Series CAN_L,0402,C17168,1,CAN,LCSC Basic,Optional EMI filter
+R6,1K,LED current limit,0402,C11702,1,LED,LCSC Basic,~1.2mA at 3.3V

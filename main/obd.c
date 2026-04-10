@@ -270,12 +270,18 @@ static void obd_parse_response(char *str, uint32_t len, QueueHandle_t *q, char* 
             
             if(strcmp(config.ctrl_mode, "ELM327") == 0)
             {
-                elm327_process_cmd((uint8_t *)"ATPP 0E SV 7A\r", 0, NULL, response_buffer, 
+#if HARDWARE_VER == WICAN_PRO
+                elm327_process_cmd((uint8_t *)"ATPP 0E SV 7A\r", 0, NULL, response_buffer,
                                 &response_len, &response_cmd_time, NULL);
-                elm327_process_cmd((uint8_t *)"ATPP 0E ON\r", 0, NULL, response_buffer, 
+                elm327_process_cmd((uint8_t *)"ATPP 0E ON\r", 0, NULL, response_buffer,
                                 &response_len, &response_cmd_time, NULL);
-                elm327_process_cmd((uint8_t *)"ATZ\r", 0, NULL, response_buffer, 
+                elm327_process_cmd((uint8_t *)"ATZ\r", 0, NULL, response_buffer,
                                 &response_len, &response_cmd_time, NULL);
+#else
+                elm327_process_cmd((uint8_t *)"ATPP 0E SV 7A\r", 15, NULL, NULL);
+                elm327_process_cmd((uint8_t *)"ATPP 0E ON\r", 11, NULL, NULL);
+                elm327_process_cmd((uint8_t *)"ATZ\r", 4, NULL, NULL);
+#endif
                 vTaskDelay(pdMS_TO_TICKS(100));
                 ESP_LOGW(TAG, "Setting sleep mode to Native");
             }
@@ -290,31 +296,37 @@ static void obd_parse_response(char *str, uint32_t len, QueueHandle_t *q, char* 
                 config.vl_sleep.voltage != sleep_voltage ||
                 config.vl_sleep.time != sleep_time)
             {
+#if HARDWARE_VER == WICAN_PRO
+                // STN1110-specific sleep/wake commands via UART
                 sprintf(sleep_cmd, "STSLVLW >%.2f, 1\r", wakeup_voltage);
                 sprintf(wake_cmd, "STSLVLS <%.2f, %lu\r", sleep_voltage, sleep_time);
-                elm327_process_cmd((uint8_t *)sleep_cmd, 0, NULL, response_buffer, 
+                elm327_process_cmd((uint8_t *)sleep_cmd, 0, NULL, response_buffer,
                                 &response_len, &response_cmd_time, NULL);
-                elm327_process_cmd((uint8_t *)wake_cmd, 0, NULL, response_buffer, 
+                elm327_process_cmd((uint8_t *)wake_cmd, 0, NULL, response_buffer,
                                 &response_len, &response_cmd_time, NULL);
-                elm327_process_cmd((uint8_t *)"STSLVl off,off\r", 0, NULL, response_buffer, 
+                elm327_process_cmd((uint8_t *)"STSLVl off,off\r", 0, NULL, response_buffer,
                                 &response_len, &response_cmd_time, NULL);
-                elm327_process_cmd((uint8_t *)"STSLU off, off\r", 0, NULL, response_buffer, 
-                                &response_len, &response_cmd_time, NULL);
-                vTaskDelay(pdMS_TO_TICKS(10));
-
-                elm327_process_cmd((uint8_t *)"ATPP 0F SV 95\r", 0, NULL, response_buffer, 
-                                &response_len, &response_cmd_time, NULL);
-                vTaskDelay(pdMS_TO_TICKS(10));
-                elm327_process_cmd((uint8_t *)"ATPP 0F ON\r", 0, NULL, response_buffer, 
-                                &response_len, &response_cmd_time, NULL);
-                vTaskDelay(pdMS_TO_TICKS(10));
-                elm327_process_cmd((uint8_t *)"STSLUIT 1200\r", 0, NULL, response_buffer, 
+                elm327_process_cmd((uint8_t *)"STSLU off, off\r", 0, NULL, response_buffer,
                                 &response_len, &response_cmd_time, NULL);
                 vTaskDelay(pdMS_TO_TICKS(10));
 
-                elm327_process_cmd((uint8_t *)"ATZ\r", 0, NULL, response_buffer, 
+                elm327_process_cmd((uint8_t *)"ATPP 0F SV 95\r", 0, NULL, response_buffer,
+                                &response_len, &response_cmd_time, NULL);
+                vTaskDelay(pdMS_TO_TICKS(10));
+                elm327_process_cmd((uint8_t *)"ATPP 0F ON\r", 0, NULL, response_buffer,
+                                &response_len, &response_cmd_time, NULL);
+                vTaskDelay(pdMS_TO_TICKS(10));
+                elm327_process_cmd((uint8_t *)"STSLUIT 1200\r", 0, NULL, response_buffer,
+                                &response_len, &response_cmd_time, NULL);
+                vTaskDelay(pdMS_TO_TICKS(10));
+
+                elm327_process_cmd((uint8_t *)"ATZ\r", 0, NULL, response_buffer,
                                 &response_len, &response_cmd_time, NULL);
                 vTaskDelay(pdMS_TO_TICKS(100));
+#else
+                // Non-PRO: no STN1110 chip, skip STN-specific sleep commands
+                ESP_LOGW(TAG, "STN sleep commands skipped (no STN1110)");
+#endif
                 ESP_LOGW(TAG, "Setting sleep parameters");
                 // elm327_disable_wake_commands();
             }               
@@ -345,8 +357,14 @@ esp_err_t obd_get_voltage(float *val)
     static uint32_t response_len = 0;
     static int64_t response_cmd_time = 0;
 
+#if HARDWARE_VER == WICAN_PRO
     elm327_process_cmd((uint8_t *)GET_VOLTAGE_CMD, strlen(GET_VOLTAGE_CMD), NULL,
                       response_buffer, &response_len, &response_cmd_time, obd_parse_response);
+#else
+    // Non-PRO: no STN1110, voltage read via ADC or not available
+    *val = 0;
+    return ESP_FAIL;
+#endif
 
     if (xQueueReceive(battery_voltage_queue, val, pdMS_TO_TICKS(1500)) == pdPASS)
     {
@@ -374,14 +392,18 @@ void obd_init(void)
     static char cmd_buffer[16];
     static uint32_t cmd_buffer_len = 0;
     static int64_t response_cmd_time = 0;
+#if HARDWARE_VER == WICAN_PRO
     ESP_LOGI(TAG, "Sending Sleep command");
-    elm327_process_cmd((uint8_t *)GET_SLEEP_CONFIG_CMD, 
-                      strlen(GET_SLEEP_CONFIG_CMD), 
-                      NULL, 
-                      cmd_buffer, 
-                      &cmd_buffer_len, 
-                      &response_cmd_time, 
+    elm327_process_cmd((uint8_t *)GET_SLEEP_CONFIG_CMD,
+                      strlen(GET_SLEEP_CONFIG_CMD),
+                      NULL,
+                      cmd_buffer,
+                      &cmd_buffer_len,
+                      &response_cmd_time,
                       obd_parse_response);
-    ESP_LOGI(TAG, "Waiting for Sleep command response");                  
+    ESP_LOGI(TAG, "Waiting for Sleep command response");
     vTaskDelay(pdMS_TO_TICKS(500));
+#else
+    ESP_LOGI(TAG, "Non-PRO: skipping STN sleep config");
+#endif
 }

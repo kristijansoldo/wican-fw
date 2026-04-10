@@ -57,7 +57,7 @@
 // #define TAG 		__func__
 #define TAG         "SLEEP_MODE"
 
-#if HARDWARE_VER != WICAN_PRO
+#if HARDWARE_VER != WICAN_PRO && HARDWARE_VER != WICAN_PRV_LINK
 
 #define TIMES              256
 #define GET_UNIT(x)        ((x>>3) & 0x1)
@@ -90,7 +90,7 @@ static adc_channel_t channel[1] = {ADC1_CHANNEL_4};
 #else
 static uint16_t adc1_chan_mask = BIT(6);
 //static uint16_t adc2_chan_mask = BIT(0);
-static adc_channel_t channel[1] = {ADC1_CHANNEL_6};
+static adc_channel_t channel[1] = {ADC_CHANNEL_6};
 #endif
 #endif
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -114,7 +114,7 @@ static EventGroupHandle_t s_mqtt_event_group = NULL;
 static float sleep_voltage = 13.1f;
 static uint8_t enable_sleep = 0;
 static QueueHandle_t voltage_queue = NULL;
-static esp_adc_cal_characteristics_t adc1_chars;
+static adc_cali_handle_t adc1_cali_handle = NULL;
 // Static queue storage for voltage_queue (queue length = 1, item size = sizeof(float))
 static StaticQueue_t voltage_queue_struct;
 static uint8_t voltage_queue_storage[sizeof(float)];

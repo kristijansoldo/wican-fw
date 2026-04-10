@@ -242,7 +242,7 @@ esp_err_t sd_card_init(void)
         ESP_LOGI(TAG, "SD card detected: Size: %lluMB", ((uint64_t)sdcard.csd.capacity * sdcard.csd.sector_size) / (1024 * 1024));
         
         esp_vfs_littlefs_conf_t conf = {
-            .base_path = MOUNT_POINT,
+            .base_path = FS_MOUNT_POINT,
             .partition_label = NULL,  // Not using internal flash partition
             .partition = NULL,        // Not using internal flash partition
             .sdcard = &sdcard,           // Using SD card
@@ -302,7 +302,7 @@ esp_err_t sd_card_deinit(void)
     }
     s_card = NULL;
     #else
-    esp_err_t ret = esp_vfs_littlefs_unregister(MOUNT_POINT);
+    esp_err_t ret = esp_vfs_littlefs_unregister(FS_MOUNT_POINT);
     if (ret != ESP_OK) 
     {
         ESP_LOGE(TAG, "Failed to unmount LittleFS filesystem (%s)", esp_err_to_name(ret));

@@ -22,7 +22,11 @@
 #ifndef SLEEP_MODE_h
 #define SLEEP_MODE_h
 
-#if HARDWARE_VER != WICAN_PRO
+#if HARDWARE_VER == WICAN_PRV_LINK
+// PRV-LINK: no ADC voltage monitoring, stub functions
+static inline int8_t sleep_mode_init(uint8_t enable, float sleep_volt) { (void)enable; (void)sleep_volt; return 0; }
+static inline int8_t sleep_mode_get_voltage(float *val) { *val = 12.0f; return 0; }
+#elif HARDWARE_VER != WICAN_PRO
 int8_t sleep_mode_init(uint8_t enable, float sleep_volt);
 int8_t sleep_mode_get_voltage(float *val);
 #elif HARDWARE_VER == WICAN_PRO

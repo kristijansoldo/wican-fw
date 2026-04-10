@@ -1017,7 +1017,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
             memcpy(ble_last_remote_bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
             xEventGroupSetBits(s_ble_event_group, BLE_CONNECTED_BIT);
             dev_status_set_bits(DEV_BLE_CONNECTED_BIT);
-            #if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+            #if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
             gpio_set_level(conn_led, 0);
             #endif
             /* Only initiate encryption automatically if pairing currently allowed */
@@ -1040,7 +1040,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
             ble_secured = false;
             xEventGroupClearBits(s_ble_event_group, BLE_CONNECTED_BIT);
             dev_status_clear_bits(DEV_BLE_CONNECTED_BIT);
-            #if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+            #if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
             gpio_set_level(conn_led, 1);
             #endif
             /* start advertising again when missing the connect */

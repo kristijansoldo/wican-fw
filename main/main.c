@@ -84,13 +84,15 @@
 #define USB_ID_PIN					39
 #define USB_OTG_PWR_EN				10
 #define USB_ESP_MODE_EN				11
-#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+#if HARDWARE_VER == WICAN_PRV_LINK
+#define GPIO_OUTPUT_PIN_SEL  		((1ULL<<CONNECTED_LED_GPIO_NUM) | (1ULL<<CAN_STDBY_GPIO_NUM))
+#elif HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
 #define GPIO_OUTPUT_PIN_SEL  		((1ULL<<CONNECTED_LED_GPIO_NUM) | (1ULL<<ACTIVE_LED_GPIO_NUM) | (1ULL<<PWR_LED_GPIO_NUM) | (1ULL<<CAN_STDBY_GPIO_NUM) | (1ULL<<USB_ESP_MODE_EN))
 #elif HARDWARE_VER == WICAN_PRO
 // #define GPIO_OUTPUT_PIN_SEL  		((1ULL<<CAN_STDBY_GPIO_NUM) | (1ULL<<USB_OTG_PWR_EN) | (1ULL<<USB_ESP_MODE_EN))
 #define GPIO_OUTPUT_PIN_SEL  		(1ULL<<USB_ESP_MODE_EN)
-#define I2C_MASTER_SCL_IO           6     
-#define I2C_MASTER_SDA_IO           5      
+#define I2C_MASTER_SCL_IO           6
+#define I2C_MASTER_SDA_IO           5
 #define I2C_MASTER_NUM              0
 #define I2C_MASTER_FREQ_HZ          200000
 #define I2C_MASTER_TX_BUF_DISABLE   0
@@ -154,7 +156,7 @@ static void process_led(bool state)
 
 	if(!can_is_enabled())
 	{
-		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
 		gpio_set_level(ACTIVE_LED_GPIO_NUM, 1);
 		#endif
 		current_state = 0;
@@ -176,13 +178,13 @@ static void process_led(bool state)
 	}
 	if(state == 1)
 	{
-		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
 			gpio_set_level(ACTIVE_LED_GPIO_NUM, 0);
 		#endif
 	}
 	else
 	{
-		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
 			gpio_set_level(ACTIVE_LED_GPIO_NUM, 1);
 		#endif
 	}
@@ -578,6 +580,14 @@ void app_main(void)
 	dev_status_set_bits(DEV_AWAKE_BIT);
 	dev_status_clear_bits(DEV_SLEEP_BIT);
 
+#if HARDWARE_VER == WICAN_PRV_LINK
+	// PRV-LINK: minimal init - no SD card, no I2C, no AW2023 LED
+	gpio_reset_pin(BUTTON_GPIO_NUM);
+	gpio_set_direction(BUTTON_GPIO_NUM, GPIO_MODE_INPUT);
+	gpio_set_pull_mode(BUTTON_GPIO_NUM, GPIO_PULLUP_ONLY);
+	// Skip: sd_card_init, i2c_master_init, led_init (AW2023)
+	// LED is direct GPIO, configured via GPIO_OUTPUT_PIN_SEL
+#else
 	gpio_reset_pin(BUTTON_GPIO_NUM);
 	gpio_set_direction(BUTTON_GPIO_NUM, GPIO_MODE_INPUT);
 	gpio_set_pull_mode(BUTTON_GPIO_NUM, GPIO_PULLUP_ONLY);
@@ -587,7 +597,7 @@ void app_main(void)
 	gpio_set_pull_mode(SDCARD_DETECT_PIN, GPIO_PULLUP_ONLY);
 
 	sd_card_init();
-	
+
 	if(dev_status_is_bit_set(DEV_SDCARD_MOUNTED_BIT) && gpio_get_level(BUTTON_GPIO_NUM) == 0)
 	{
 		sdcard_perform_ota_update("/wican.bin");
@@ -596,6 +606,7 @@ void app_main(void)
 	i2c_master_init();
 	led_init(I2C_MASTER_NUM);
 	safe_mode_check();
+#endif
 
 	#ifdef PRINT_HEAP
 	static StackType_t *heap_task_stack;
@@ -614,7 +625,9 @@ void app_main(void)
 	}
 	#endif
 
+	#if HARDWARE_VER == WICAN_PRO
 	sleep_mode_print_wakeup_reason();
+	#endif
 
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -647,6 +660,16 @@ void app_main(void)
 	// gpio_set_direction(USB_ESP_MODE_EN, GPIO_MODE_OUTPUT);
 	// gpio_set_level(USB_ESP_MODE_EN, 0);
 
+#if HARDWARE_VER == WICAN_PRV_LINK
+	// PRV-LINK: LED on, CAN standby init, no USB/OBD/IMU/RTC pins
+	gpio_set_level(CONNECTED_LED_GPIO_NUM, 1);
+
+	gpio_reset_pin(CAN_STDBY_GPIO_NUM);
+	gpio_set_direction(CAN_STDBY_GPIO_NUM, GPIO_MODE_OUTPUT);
+	gpio_set_level(CAN_STDBY_GPIO_NUM, 1);
+	// Skip: USB_ID_PIN, USB_OTG_PWR_EN, OBD_RESET/READY/SLEEP/LED_EN, IMU, RTC
+
+#else
 	#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
 	gpio_set_level(CONNECTED_LED_GPIO_NUM, 1);
 	gpio_set_level(ACTIVE_LED_GPIO_NUM, 1);
@@ -658,7 +681,7 @@ void app_main(void)
 	gpio_set_direction(4, GPIO_MODE_INPUT);
 	gpio_pullup_dis(4);
 	gpio_pulldown_dis(4);
-	
+
 	#if HARDWARE_VER == WICAN_PRO
 	uint8_t imu_threshold = 8; // Default value
 	if(config_server_get_imu_threshold(&imu_threshold) != 0) {
@@ -668,8 +691,6 @@ void app_main(void)
 	rtcm_init(I2C_MASTER_NUM);
 	wusb3801_init(I2C_MASTER_NUM);
 	rtcm_sync_system_time_from_rtc();
-	// rtcm_set_time(0x23, 0x32, 0x00);  // 12:30:00 in BCD
-	// rtcm_set_date(0x24, 0x12, 0x27, 0x06);  // 2024-01-20 Saturday(6) in BCD	
 	#endif
 
 	gpio_reset_pin(0);
@@ -677,7 +698,6 @@ void app_main(void)
 	gpio_reset_pin(USB_OTG_PWR_EN);
 	gpio_set_direction(USB_OTG_PWR_EN, GPIO_MODE_INPUT);
 
-	
 	gpio_reset_pin(CAN_STDBY_GPIO_NUM);
 	gpio_set_direction(CAN_STDBY_GPIO_NUM, GPIO_MODE_OUTPUT);
 	gpio_set_level(CAN_STDBY_GPIO_NUM, 1);
@@ -704,6 +724,7 @@ void app_main(void)
 	gpio_set_direction(OBD_SLEEP_PIN, GPIO_MODE_OUTPUT);
 	gpio_pulldown_en(OBD_SLEEP_PIN);
 	gpio_set_level(OBD_SLEEP_PIN, 1);
+#endif
 
 
 
@@ -729,7 +750,7 @@ void app_main(void)
 	#if HARDWARE_VER == WICAN_PRO
 	wc_uart_init();
 	#endif
-	#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+	#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
 	xMsg_Rx_Queue = xQueueCreate(32, sizeof( xdev_buffer) );
     xMsg_Tx_Queue = xQueueCreate(32, sizeof( xdev_buffer) );
     xmsg_ws_tx_queue = xQueueCreate(32, sizeof( xdev_buffer) );
@@ -784,13 +805,13 @@ void app_main(void)
 			derived_mac_addr[0], derived_mac_addr[1], derived_mac_addr[2],
 			derived_mac_addr[3], derived_mac_addr[4], derived_mac_addr[5]);
 			
-	#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+	#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
 		config_server_start(&xmsg_ws_tx_queue, &xMsg_Rx_Queue, CONNECTED_LED_GPIO_NUM, (char*)&uid[0]);
 	#else
 		config_server_start(&xmsg_ws_tx_queue, &xMsg_Rx_Queue, 0, (char*)&uid[0]);
 	#endif
 
-	#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+	#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
 	if(config_server_get_sleep_config())
 	{
 		float sleep_voltage = 0;
@@ -914,33 +935,34 @@ void app_main(void)
 	#else
 	else if(protocol == OBD_ELM327)
 	{
-//		can_init(CAN_500K);
-		#if HARDWARE_VER != WICAN_PRO
 		can_set_bitrate(can_datarate);
 		can_set_silent(1);
 		can_enable();
-		#endif
 		xmsg_obd_rx_queue = xQueueCreate(32, sizeof( twai_message_t) );
 		if(config_server_mqtt_en_config() && config_server_mqtt_elm327_log())
 		{
 			mqtt_elm327_log_en = config_server_mqtt_elm327_log();
-			elm327_init(&xmsg_obd_rx_queue, log_can_to_mqtt);
+			elm327_init(&send_to_host, &xmsg_obd_rx_queue, log_can_to_mqtt, false);
 		}
 		else
 		{
-			elm327_init(&xmsg_obd_rx_queue, NULL);
+			elm327_init(&send_to_host, &xmsg_obd_rx_queue, NULL, false);
 		}
 	}
 	else if(protocol == AUTO_PID)
 	{
 		can_set_bitrate(can_datarate);
-		#if HARDWARE_VER != WICAN_PRO
 		can_enable();
-		#endif
 		xmsg_obd_rx_queue = xQueueCreate(32, sizeof( twai_message_t) );
-		
-		elm327_init(&xmsg_obd_rx_queue, NULL);
-		autopid_init((char*)&uid[0], config_server_get_auto_pid());
+
+		elm327_init(&send_to_host, &xmsg_obd_rx_queue, NULL, false);
+		uint32_t log_period = 0;
+		if(config_server_get_log_period(&log_period) == -1)
+		{
+			ESP_LOGE(TAG, "error getting log period");
+			log_period = 60;
+		}
+		autopid_init((char*)&uid[0], config_server_get_logger_config(), log_period);
 	}
 	#endif
 	
@@ -965,7 +987,7 @@ void app_main(void)
 		can_enable();
 		#endif
 		
-		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
 			mqtt_init((char*)&uid[0], CONNECTED_LED_GPIO_NUM, &xmsg_mqtt_rx_queue);
 		#else
 			mqtt_init((char*)&uid[0], 0, &xmsg_mqtt_rx_queue);
@@ -993,7 +1015,7 @@ void app_main(void)
 
 	if(config_server_get_port_type() == UDP_PORT)
 	{	
-		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
 		tcp_server_init(port, &xMsg_Tx_Queue, &xMsg_Rx_Queue, CONNECTED_LED_GPIO_NUM, 1);
 		#elif HARDWARE_VER == WICAN_PRO
 		tcp_server_init(port, &xMsg_Tx_Queue, &xMsg_Rx_Queue, 0, 1);
@@ -1001,7 +1023,7 @@ void app_main(void)
 	}
 	else
 	{
-		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
 		tcp_server_init(port, &xMsg_Tx_Queue, &xMsg_Rx_Queue, CONNECTED_LED_GPIO_NUM, 0);
 		#elif HARDWARE_VER == WICAN_PRO
 		tcp_server_init(port, &xMsg_Tx_Queue, &xMsg_Rx_Queue, 0, 0);
@@ -1015,9 +1037,10 @@ void app_main(void)
 		static StaticQueue_t xmsg_ble_tx_queue_Buffer;
 		// xMsg_Rx_Queue_Storage = (xdev_buffer *)heap_caps_malloc(32 * xdev_buffer_size, MALLOC_CAP_SPIRAM);
 		// xmsg_ble_tx_queue = xQueueCreate(20, sizeof( xdev_buffer) );
-		xmsg_ble_tx_queue_Storage = (xdev_buffer *)heap_caps_malloc(100 * xdev_buffer_size, MALLOC_CAP_SPIRAM);
-		xmsg_ble_tx_queue = xQueueCreateStatic(100, xdev_buffer_size, (uint8_t *)xmsg_ble_tx_queue_Storage, &xmsg_ble_tx_queue_Buffer);
-		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+		size_t xdev_buf_size = sizeof(xdev_buffer);
+		xmsg_ble_tx_queue_Storage = (xdev_buffer *)heap_caps_malloc(100 * xdev_buf_size, MALLOC_CAP_SPIRAM);
+		xmsg_ble_tx_queue = xQueueCreateStatic(100, xdev_buf_size, (uint8_t *)xmsg_ble_tx_queue_Storage, &xmsg_ble_tx_queue_Buffer);
+		#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
 		ble_init(&xmsg_ble_tx_queue, &xMsg_Rx_Queue, CONNECTED_LED_GPIO_NUM, pass, &ble_uid[0]);
 		#elif HARDWARE_VER == WICAN_PRO
 		if(internal_buf != NULL)
@@ -1088,8 +1111,10 @@ void app_main(void)
 						can_rx_task_stack, &can_rx_task_buffer);
 		xTaskCreateStatic(can_tx_task, "can_tx_task", can_task_stack_depth_words, (void*)AF_INET, 5, 
 						can_tx_task_stack, &can_tx_task_buffer);
-		xTaskCreateStatic(obd_rx_task, "obd_rx_task", can_task_stack_depth_words, (void*)AF_INET, 5, 
+		#if HARDWARE_VER == WICAN_PRO
+		xTaskCreateStatic(obd_rx_task, "obd_rx_task", can_task_stack_depth_words, (void*)AF_INET, 5,
 						obd_rx_task_stack, &obd_rx_task_buffer);
+		#endif
 	} 
 	else 
 	{
@@ -1158,7 +1183,7 @@ void app_main(void)
 	// esp_log_level_set("HA_WEBHOOK_CFG", ESP_LOG_INFO);
 	// esp_log_level_set("HA_WEBHOOK_HTTP", ESP_LOG_INFO);
 
-	#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100
+	#if HARDWARE_VER == WICAN_V300 || HARDWARE_VER == WICAN_USB_V100 || HARDWARE_VER == WICAN_PRV_LINK
     gpio_set_level(PWR_LED_GPIO_NUM, 1);
 	#elif HARDWARE_VER == WICAN_PRO
 	led_set_level(0,0,200);

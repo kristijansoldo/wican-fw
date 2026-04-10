@@ -1359,7 +1359,9 @@ static esp_err_t system_commands_handler(httpd_req_t *req)
             }
             else if (strcmp(cmd, "force_update_obd") == 0)
             {
+#if HARDWARE_VER == WICAN_PRO
                 elm327_update_obd(true);
+#endif
             }
             else if (strcmp(cmd, "set_rtc_time") == 0)
             {

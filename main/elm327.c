@@ -64,6 +64,7 @@ void (*elm327_can_log)(twai_message_t* frame, uint8_t type);
 
 #if HARDWARE_VER != WICAN_PRO
 void (*elm327_response)(char*, uint32_t, QueueHandle_t *q);
+static QueueHandle_t *can_rx_queue = NULL;
 uint8_t service_09_rsp_len[] = {1, 1, 4, 1, 255, 1, 255, 1, 1, 1, 4, 1}; //255 unknow
 const char *ok_str = "OK";
 const char *question_mark_str = "?";
@@ -1287,12 +1288,33 @@ int8_t elm327_process_cmd(uint8_t *buf, uint8_t len, twai_message_t *frame, Queu
 	return 0;
 }
 
-void elm327_init(void (*send_to_host)(char*, uint32_t, QueueHandle_t *q), QueueHandle_t *rx_queue, void (*can_log)(twai_message_t* frame, uint8_t type))
+void elm327_init(response_callback_t rsp_callback, QueueHandle_t *rx_queue, void (*can_log)(twai_message_t* frame, uint8_t type), bool udp_log_enabled)
 {
+	(void)udp_log_enabled; // unused in non-PRO mode
 	elm327_set_default_config(true);
-	elm327_response = send_to_host;
+	elm327_response = rsp_callback;
 	can_rx_queue = rx_queue;
 	elm327_can_log = can_log;
+}
+
+esp_err_t elm327_sleep(void)
+{
+	ESP_LOGW(TAG, "elm327_sleep: not implemented for non-PRO");
+	return ESP_OK;
+}
+
+esp_err_t elm327_get_protocol_number(uint8_t *protocol_number)
+{
+	if (protocol_number) *protocol_number = 6; // ISO 15765-4 CAN 11-bit 500kbps
+	return ESP_OK;
+}
+
+void elm327_run_command(char* command, uint32_t command_len, uint32_t timeout, QueueHandle_t *response_q, response_callback_t response_callback, bool stop_after_first_frame, uint32_t expected_frame_id)
+{
+	// Non-PRO stub: process command via elm327_process_cmd
+	if (command && command_len > 0) {
+		elm327_process_cmd((uint8_t *)command, (uint8_t)command_len, NULL, response_q);
+	}
 }
 #else
 #include <stdlib.h>

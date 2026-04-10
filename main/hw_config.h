@@ -21,18 +21,52 @@
 
 #include "esp_err.h"
 
-#if HARDWARE_VER == WICAN_PRO
+#if HARDWARE_VER == WICAN_PRV_LINK
+/*
+ * PRV-LINK OBD2 BLE Adapter (Provirium)
+ * ESP32-S3 TWAI direct - no STN1110
+ * Software ELM327 emulation
+ * Minimal design: ESP32 + CAN transceiver + power + LED
+ */
+#define FS_MOUNT_POINT              "/littlefs"
+#define TX_GPIO_NUM             	4       // TWAI TX -> TJA1043T TXD
+#define RX_GPIO_NUM             	5       // TWAI RX <- TJA1043T RXD
+#define CAN_STDBY_GPIO_NUM			38      // CAN transceiver standby control
+
+#define CONNECTED_LED_GPIO_NUM		42      // Status LED (green)
+#define ACTIVE_LED_GPIO_NUM			42      // Same LED for activity
+#define PWR_LED_GPIO_NUM			42      // Same LED for power indication
+#define BLE_EN_PIN_NUM				42      // Reuse LED pin (no separate BLE LED)
+
+#define BUTTON_GPIO_NUM			    8       // Optional: factory reset button
+
+// PRV-LINK does not have these peripherals but code still compiles them.
+// Dummy pin definitions to avoid build errors (pins are never initialized):
+#define IMU_INT_GPIO_NUM			3       // unused, IMU not populated
+#define SDCARD_CLK                  21      // unused, no SD card
+#define SDCARD_CMD                  47      // unused
+#define SDCARD_D0                   14      // unused
+#define SDCARD_D1                   13      // unused
+#define SDCARD_D2                   12      // unused
+#define SDCARD_D3                   48      // unused
+#define SDCARD_DETECT_PIN           40      // unused
+#define OBD_RESET_PIN           (GPIO_NUM_41)  // unused, no STN1110
+#define OBD_LED_EN_PIN          (GPIO_NUM_42)  // reused as status LED
+#define OBD_READY_PIN           (GPIO_NUM_7)   // unused
+#define OBD_SLEEP_PIN           (GPIO_NUM_9)   // unused
+
+#elif HARDWARE_VER == WICAN_PRO
 #ifdef USE_FATFS
 #define FS_MOUNT_POINT              "/fatfs"
 #else
 #define FS_MOUNT_POINT              "/littlefs"
 #endif
-#define USE_SD_FATFS    
+#define USE_SD_FATFS
 #define TX_GPIO_NUM             	2
 #define RX_GPIO_NUM             	1
 #define CAN_STDBY_GPIO_NUM			38
 
-#define SDCARD_CLK                  21                 
+#define SDCARD_CLK                  21
 #define SDCARD_CMD                  47
 #define SDCARD_D0                   14
 #define SDCARD_D1                   13

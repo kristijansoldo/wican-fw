@@ -446,12 +446,20 @@ esp_err_t autopid_find_standard_pid(uint8_t protocol, char *available_pids, uint
         static const char *elm327_config = "atws\ratm0\rate0\rath1\ratl0\rats1\ratst96\r";
         // elm327_process_cmd((uint8_t*)elm327_config, strlen(elm327_config), &frame, &autopidQueue);
         // while (xQueueReceive(autopidQueue, response, pdMS_TO_TICKS(1000)) == pdPASS);
+#if HARDWARE_VER == WICAN_PRO
         elm327_process_cmd((uint8_t *)elm327_config, strlen(elm327_config), &autopidQueue, elm327_autopid_cmd_buffer, &elm327_autopid_cmd_buffer_len, &elm327_autopid_last_cmd_time, NULL);
+#else
+        elm327_process_cmd((uint8_t *)elm327_config, strlen(elm327_config), NULL, &autopidQueue);
+#endif
         const char *protocol_cmds = supported_protocols[selected_protocol];
         ESP_LOGI(TAG, "Sending protocol commands: %s", protocol_cmds);
         // elm327_process_cmd((uint8_t*)protocol_cmds, strlen(protocol_cmds), &frame, &autopidQueue);
         // while (xQueueReceive(autopidQueue, response, pdMS_TO_TICKS(1000)) == pdPASS);
+#if HARDWARE_VER == WICAN_PRO
         elm327_process_cmd((uint8_t *)protocol_cmds, strlen(protocol_cmds), &autopidQueue, elm327_autopid_cmd_buffer, &elm327_autopid_cmd_buffer_len, &elm327_autopid_last_cmd_time, NULL);
+#else
+        elm327_process_cmd((uint8_t *)protocol_cmds, strlen(protocol_cmds), NULL, &autopidQueue);
+#endif
         ESP_LOGI(TAG, "Protocol %d set successfully", selected_protocol);
     }
     else
@@ -492,7 +500,11 @@ esp_err_t autopid_find_standard_pid(uint8_t protocol, char *available_pids, uint
     {
         ESP_LOGI(TAG, "Processing PID support command: %s", pid_support_cmds[i]);
 
+#if HARDWARE_VER == WICAN_PRO
         if (elm327_process_cmd((uint8_t *)pid_support_cmds[i], strlen(pid_support_cmds[i]), &autopidQueue, elm327_autopid_cmd_buffer, &elm327_autopid_cmd_buffer_len, &elm327_autopid_last_cmd_time, autopid_parser) != 0)
+#else
+        if (elm327_process_cmd((uint8_t *)pid_support_cmds[i], strlen(pid_support_cmds[i]), NULL, &autopidQueue) != 0)
+#endif
         {
             ESP_LOGW(TAG, "Failed to process PID support command: %s", pid_support_cmds[i]);
             continue;
@@ -1494,7 +1506,7 @@ void autopid_publish_all_destinations(void)
             }
             else
             {
-                ESP_LOGE(TAG, "HTTP(S) dest %u request failed: %s", i, esp_err_to_name(err));
+                ESP_LOGE(TAG, "HTTP(S) dest %" PRIu32 " request failed: %s", (uint32_t)i, esp_err_to_name(err));
                 gd->consec_failures++;
                 gd->fail_count++;
                 // Apply backoff logic (same as ABRP)
@@ -1814,7 +1826,7 @@ void autopid_publish_all_destinations(void)
             }
             else
             {
-                ESP_LOGE(TAG, "HTTP(S) dest %u request failed: %s", i, esp_err_to_name(err));
+                ESP_LOGE(TAG, "HTTP(S) dest %" PRIu32 " request failed: %s", (uint32_t)i, esp_err_to_name(err));
                 ok = false;
             }
 
@@ -2747,9 +2759,15 @@ static bool autopid_validate_response_for_cmd(const char *cmd_str, const respons
     return false;
 }
 
+#if HARDWARE_VER == WICAN_PRO
 void autopid_atma_parser(char *str, uint32_t len, QueueHandle_t *q, char *cmd_str)
+#else
+void autopid_atma_parser(char *str, uint32_t len, QueueHandle_t *q)
+#endif
 {
+#if HARDWARE_VER == WICAN_PRO
     (void)cmd_str;
+#endif
     if (!str || len == 0 || !q)
         return;
 
@@ -2789,7 +2807,11 @@ void autopid_atma_parser(char *str, uint32_t len, QueueHandle_t *q, char *cmd_st
     }
 }
 
+#if HARDWARE_VER == WICAN_PRO
 void autopid_parser(char *str, uint32_t len, QueueHandle_t *q, char *cmd_str)
+#else
+void autopid_parser(char *str, uint32_t len, QueueHandle_t *q)
+#endif
 {
     static response_t *response = NULL;
 
@@ -2830,11 +2852,19 @@ void autopid_parser(char *str, uint32_t len, QueueHandle_t *q, char *cmd_str)
                 }
 
                 // Optional: validate that this response matches the PID request we sent.
+#if HARDWARE_VER == WICAN_PRO
                 if (autopid_pid_validation_enabled() &&
                     !autopid_validate_response_for_cmd(cmd_str, response))
                 {
                     ESP_LOGE(TAG, "PID validation failed. cmd='%s' rsp_len=%lu", cmd_str ? cmd_str : "(null)",
                              (unsigned long)response->length);
+#else
+                if (autopid_pid_validation_enabled() &&
+                    !autopid_validate_response_for_cmd(NULL, response))
+                {
+                    ESP_LOGE(TAG, "PID validation failed. rsp_len=%lu",
+                             (unsigned long)response->length);
+#endif
                     sprintf((char *)response->data, "error");
                     response->length = strlen((char *)response->data);
                 }
@@ -4018,7 +4048,11 @@ static void autopid_task(void *pvParameters)
                             }
 
                             ESP_LOGI(TAG, "Executing command: %s", curr_pid->cmd);
-                        if (elm327_process_cmd((uint8_t *)curr_pid->cmd, strlen(curr_pid->cmd), &autopidQueue, elm327_autopid_cmd_buffer, &elm327_autopid_cmd_buffer_len, &elm327_autopid_last_cmd_time, autopid_parser) == ESP_OK)
+    #if HARDWARE_VER == WICAN_PRO
+                    if (elm327_process_cmd((uint8_t *)curr_pid->cmd, strlen(curr_pid->cmd), &autopidQueue, elm327_autopid_cmd_buffer, &elm327_autopid_cmd_buffer_len, &elm327_autopid_last_cmd_time, autopid_parser) == ESP_OK)
+#else
+                    if (elm327_process_cmd((uint8_t *)curr_pid->cmd, strlen(curr_pid->cmd), NULL, &autopidQueue) == ESP_OK)
+#endif
                         {
                             response_t elm327_response;
                             ESP_LOGI(TAG, "Command processed successfully");
@@ -4200,7 +4234,7 @@ static void autopid_task(void *pvParameters)
                 {
                     continue;
                 }
-                ESP_LOGI(TAG, "Monitoring CAN filter frame_id=0x%X", f->frame_id);
+                ESP_LOGI(TAG, "Monitoring CAN filter frame_id=0x%" PRIx32, f->frame_id);
                 send_can_filter_cmd(f->frame_id);
 
                 // Run ATMA for a bounded time slice; response_callback uses autopid_parser

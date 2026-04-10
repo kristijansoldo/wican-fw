@@ -212,10 +212,16 @@ static void test_can_raw_snippet(char *dst, size_t dstsz)
     canflt_raw_sanitize_snippet(dst);
 }
 
+#if HARDWARE_VER == WICAN_PRO
 static void test_can_capture_cb(char *str, uint32_t len, QueueHandle_t *q, char *cmd_str)
+#else
+static void test_can_capture_cb(char *str, uint32_t len, QueueHandle_t *q)
+#endif
 {
     (void)q;
+#if HARDWARE_VER == WICAN_PRO
     (void)cmd_str;
+#endif
 
     if (!test_can_raw_buf || test_can_raw_cap == 0)
         return;
