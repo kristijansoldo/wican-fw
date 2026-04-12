@@ -36,6 +36,11 @@
 ## Faza 6: PCB dizajn
 - [ ] PCB layout u KiCad-u (ESP32-C3 + CAN + power + OBD2)
 - [ ] Dodati UART test padove za flashing
+- [ ] Dodati BOOT tipkalo (GPIO9 -> GND) za flash mode
+- [ ] Antena keep-out zona (bez bakra ispod PCB antene)
+- [ ] CAN differential pair routing (CANH/CANL paralelno)
+- [ ] Buck induktor petlja minimalna (L1 blizu U1)
+- [ ] Pin header za spajanje na OBD2 konektor u kucistu
 - [ ] DRC provjera (0 errors)
 - [ ] Generirati Gerber + BOM + CPL fajlove
 
